@@ -1,12 +1,14 @@
 @echo off
+cd /d "%~dp0"
 
-cd /d "C:\Users\aoaoa\OneDrive\ドキュメント\shop_items"
-
-git add .
+git add -- index.html archive
+if errorlevel 1 exit /b 1
 
 git diff --cached --quiet
-if %ERRORLEVEL%==0 exit /b 0
-
-git commit -m "Auto update"
+if errorlevel 1 (
+    git commit -m "Auto update"
+    if errorlevel 1 exit /b 1
+)
 
 git push
+exit /b %ERRORLEVEL%
