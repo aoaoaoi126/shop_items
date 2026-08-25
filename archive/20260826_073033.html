@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>新着・値下げ商品一覧</title>
+<style>
+:root {
+  --bg:#f5f5f7; --card:#fff; --text:#1d1d1f; --muted:#6e6e73;
+  --line:#dedee3; --accent:#2563eb; --new:#0f766e; --down:#c2410c;
+  --positive:#0f8f83; --borderline:#e5ad16; --negative:#d64545;
+}
+* { box-sizing:border-box; }
+body { margin:0; color:var(--text); background:var(--bg); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif; }
+button,input,select { font:inherit; }
+header { position:static; background:var(--bg); border-bottom:1px solid var(--line); }
+.wrap { width:min(1400px,100%); margin:auto; padding:14px 14px 30px; transition:width .18s ease,margin .18s ease; }
+h1 { margin:0 0 4px; font-size:22px; }
+.sub { margin-bottom:12px; color:var(--muted); font-size:12px; }
+.stats { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; }
+.stat { flex:0 0 auto; padding:8px 12px; background:#fff; border:1px solid var(--line); border-radius:12px; font-size:13px; }
+.filter-panel { margin-top:10px; }
+.filter-panel > summary { display:flex; align-items:center; justify-content:space-between; min-height:42px; padding:0 12px; color:#1d4ed8; background:#fff; border:1px solid var(--line); border-radius:10px; font-size:14px; font-weight:800; cursor:pointer; list-style:none; }
+.filter-panel > summary::-webkit-details-marker { display:none; }
+.filter-panel > summary::after { content:"▼"; margin-left:10px; font-size:12px; transition:transform .18s ease; }
+.filter-panel[open] > summary::after { transform:rotate(180deg); }
+.controls { display:grid; grid-template-columns:2fr repeat(3,minmax(120px,1fr)); gap:8px; margin-top:8px; }
+input,select { width:100%; min-height:42px; padding:0 11px; background:#fff; border:1px solid var(--line); border-radius:10px; font-size:15px; }
+.data-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:9px; }
+.export-button { min-height:36px; padding:7px 11px; color:#1d4ed8; background:#eff6ff; border:1px solid #93c5fd; border-radius:9px; font-size:12px; font-weight:800; cursor:pointer; }
+.export-note { color:var(--muted); font-size:11px; }
+main.wrap { padding-top:16px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; }
+.card { display:flex; flex-direction:column; min-width:0; overflow:hidden; background:var(--card); border:1px solid var(--line); border-radius:14px; box-shadow:0 2px 7px rgba(0,0,0,.04); }
+.card.decision-positive { border-color:rgba(15,143,131,.65); }
+.card.decision-borderline { border-color:rgba(229,173,22,.75); }
+.card.decision-negative { border-color:rgba(214,69,69,.62); }
+.imgbox { position:relative; aspect-ratio:1/1; overflow:hidden; background:#eee; }
+.imgbox img { display:block; width:100%; height:100%; object-fit:contain; background:#fff; }
+.badges { position:absolute; top:8px; left:8px; display:flex; gap:5px; flex-wrap:wrap; }
+.badge { padding:5px 8px; color:#fff; border-radius:999px; font-size:11px; font-weight:700; box-shadow:0 1px 4px rgba(0,0,0,.18); }
+.badge.new { background:var(--new); } .badge.down { background:var(--down); } .badge.shop { background:#374151; }
+.body { display:flex; flex:1; flex-direction:column; gap:6px; padding:11px; }
+.brand { font-size:13px; font-weight:800; }
+.title { display:-webkit-box; min-height:56px; overflow:hidden; color:#333; font-size:13px; line-height:1.45; -webkit-line-clamp:3; -webkit-box-orient:vertical; }
+.meta { min-height:16px; color:var(--muted); font-size:11px; }
+.price-row { display:flex; align-items:flex-end; justify-content:space-between; gap:8px; margin-top:auto; }
+.price { font-size:20px; font-weight:900; }
+.old { color:var(--muted); font-size:11px; text-decoration:line-through; }
+.downamt { color:var(--down); font-size:12px; font-weight:800; }
+.copy-title { width:100%; min-height:36px; padding:8px; color:#1d4ed8; background:#eff6ff; border:1px solid #93c5fd; border-radius:10px; font-size:12px; font-weight:800; cursor:pointer; }
+.copy-title:hover { background:#dbeafe; }
+.signal-row { display:flex; justify-content:center; gap:10px; padding:2px 0; }
+.signal-button { display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; padding:0; color:#fff; border:2px solid transparent; border-radius:50%; font-size:17px; font-weight:900; cursor:pointer; opacity:.54; box-shadow:0 2px 5px rgba(0,0,0,.16); transition:transform .12s ease,opacity .12s ease,border-color .12s ease; }
+.signal-button:hover { transform:translateY(-1px); opacity:.86; }
+.signal-button.positive { background:var(--positive); }
+.signal-button.borderline { color:#3f3200; background:var(--borderline); }
+.signal-button.negative { background:var(--negative); }
+.signal-button.selected { opacity:1; border-color:#111827; transform:scale(1.08); }
+.open { display:block; margin-top:4px; padding:10px 8px; color:#fff; background:var(--accent); border-radius:10px; text-align:center; text-decoration:none; font-weight:800; }
+.empty { display:none; padding:50px 12px; color:var(--muted); text-align:center; }
+footer { padding-top:20px; color:var(--muted); font-size:11px; line-height:1.5; }
+.decision-panel { position:fixed; right:16px; bottom:16px; z-index:50; display:none; width:320px; max-height:calc(100vh - 32px); overflow:auto; padding:13px; background:#fff; border:1px solid var(--line); border-radius:16px; box-shadow:0 18px 48px rgba(0,0,0,.22); }
+.decision-panel.open { display:block; }
+.panel-head { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.panel-chip { display:inline-flex; align-items:center; min-height:26px; padding:4px 9px; color:#fff; border-radius:999px; font-size:12px; font-weight:900; }
+.panel-chip.positive { background:var(--positive); } .panel-chip.borderline { color:#3f3200; background:var(--borderline); } .panel-chip.negative { background:var(--negative); }
+.panel-close { width:32px; height:32px; padding:0; color:#374151; background:#f3f4f6; border:0; border-radius:50%; font-size:18px; cursor:pointer; }
+.panel-title { margin:10px 0 3px; font-size:15px; line-height:1.4; }
+.panel-sub { margin:0 0 12px; color:var(--muted); font-size:11px; line-height:1.45; }
+.reason-list { display:grid; gap:6px; }
+.reason-button { width:100%; padding:8px 9px; color:#1f2937; background:#fff; border:1px solid #d1d5db; border-radius:10px; text-align:left; font-size:12px; line-height:1.45; cursor:pointer; }
+.reason-button.selected { color:#111827; background:#eef2ff; border-color:#4f46e5; box-shadow:0 0 0 2px rgba(79,70,229,.12); }
+.save-status { min-height:20px; margin-top:11px; color:#4f46e5; font-size:12px; font-weight:800; text-align:center; }
+.toast { position:fixed; left:50%; bottom:22px; z-index:80; display:none; padding:10px 14px; color:#fff; background:rgba(17,24,39,.94); border-radius:999px; font-size:12px; font-weight:800; transform:translateX(-50%); }
+.toast.show { display:block; }
+@media (max-width:720px) {
+  .wrap { padding-right:6px; padding-left:6px; } h1 { font-size:19px; }
+  .controls { grid-template-columns:1fr 1fr; } .controls .search { grid-column:1/-1; }
+  .data-actions { gap:5px; } .export-button { min-height:32px; padding:6px 8px; font-size:10px; } .export-note { width:100%; font-size:9px; }
+  .grid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; } .card { border-radius:9px; }
+  .badges { top:4px; left:4px; gap:3px; } .badge { max-width:64px; padding:3px 4px; overflow:hidden; font-size:8px; white-space:nowrap; text-overflow:ellipsis; }
+  .body { gap:4px; padding:5px; } .brand { overflow:hidden; font-size:10px; white-space:nowrap; text-overflow:ellipsis; }
+  .title { min-height:40px; font-size:9.5px; line-height:1.4; -webkit-line-clamp:3; }
+  .meta { min-height:12px; overflow:hidden; font-size:8px; white-space:nowrap; text-overflow:ellipsis; }
+  .price-row { gap:3px; } .price { font-size:14px; } .old,.downamt { font-size:8px; }
+  .copy-title { min-height:28px; padding:5px 3px; border-radius:7px; font-size:8px; line-height:1.2; }
+  .signal-row { gap:5px; } .signal-button { width:25px; height:25px; font-size:12px; border-width:1.5px; }
+  .open { padding:7px 3px; border-radius:7px; font-size:9px; }
+  body.panel-open main.wrap { padding-bottom:72vh; }
+  .decision-panel { right:0; bottom:0; left:0; width:100%; max-height:68vh; padding:14px 12px calc(14px + env(safe-area-inset-bottom)); border-right:0; border-bottom:0; border-left:0; border-radius:18px 18px 0 0; }
+  .panel-title { font-size:14px; } .reason-button { padding:9px 10px; font-size:11px; } .toast { bottom:12px; font-size:11px; }
+}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>新着・値下げ商品一覧</h1>
+  <div class="sub">作成日時：2026年08月26日 07:30</div>
+  <div class="stats" id="stats"></div>
+  <details class="filter-panel">
+    <summary>検索・絞り込みを表示</summary>
+    <div class="controls">
+      <input class="search" id="q" placeholder="ブランド・商品名で検索">
+      <select id="date"><option value="">全日付</option></select>
+      <select id="shop"><option value="">全サイト</option></select>
+      <select id="status"><option value="">新着＋値下げ</option><option>新着</option><option>値下げ</option></select>
+      <select id="sort"><option value="default">おすすめ順</option><option value="priceAsc">価格が安い順</option><option value="priceDesc">価格が高い順</option><option value="downDesc">値下げ額が大きい順</option><option value="brand">ブランド順</option></select>
+    </div>
+    <div class="data-actions">
+      <button class="export-button" id="exportCsv" type="button">判断CSVを出力</button>
+      <button class="export-button" id="exportJsonl" type="button">判断JSONLを出力</button>
+      <span class="export-note">判断はGoogleスプレッドシートへ自動送信し、この端末にもバックアップ保存します。CSV・JSONLは手動バックアップ用です。</span>
+    </div>
+  </details>
+</div></header>
+<main class="wrap">
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty">条件に合う商品がありません。</div>
+  <footer>使用ファイル：<span id="sources"></span><br>取得できない項目は空欄で保存し、missing_fieldsにも記録します。画像は各販売サイトのURLを表示しています。</footer>
+</main>
+<aside class="decision-panel" id="decisionPanel" aria-hidden="true">
+  <div class="panel-head"><span class="panel-chip" id="panelChip"></span><button class="panel-close" id="panelClose" type="button" aria-label="評価を保存して閉じる" title="評価を保存して閉じる">▼</button></div>
+  <h2 class="panel-title" id="panelTitle"></h2>
+  <p class="panel-sub">理由を選ぶと2秒後に自動保存されます。2秒を待たず別の商品を評価しても、直前の評価はその場で保存されます。▼を押すと、選んだ評価をすぐ保存して評価欄だけ閉じます。</p>
+  <div class="reason-list" id="reasonList"></div>
+  <div class="save-status" id="saveStatus"></div>
+</aside>
+<div class="toast" id="toast"></div>
+<script>
+const ITEMS = [{"status": "値下げ", "title": "HERMESエルメス）の古着「アラベスク柄 ロングワンピース」｜チャコールグレー", "brand": "HERMES", "size": "", "condition": "", "old_price": 132000.0, "new_price": 110000, "price_down": 22000.0, "url": "https://www.trefac.jp/store/3090057266266520/c4166233", "image_url": "https://www.trefac.jp/image/item/3090057266266520/w144/3090057266266707_01_0112w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "Uhrウーア）の古着「長袖ワンピース」｜イエロー", "brand": "Uhr", "size": "", "condition": "", "old_price": 9900.0, "new_price": 8800, "price_down": 1100.0, "url": "https://www.trefac.jp/store/1084001303444217/c3907622", "image_url": "https://www.trefac.jp/image/item/1084001303444217/w144/1084001303444217_01_9074w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "MaxMara BEACHWEARマックスマーラ ビーチウェア）の古着「Long dress」｜ブラウン", "brand": "MaxMara BEACHWEAR", "size": "", "condition": "", "old_price": 7700.0, "new_price": 6600, "price_down": 1100.0, "url": "https://www.trefac.jp/store/3050003695526460/c3166438", "image_url": "https://www.trefac.jp/image/item/3050003695526460/w144/3050003695526460_01_8017w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "NON TOKYOノントーキョー）の古着「DOUBLE RIBBON SHIRT ONE-PIECE NON-24S-0412 タグ付き」｜ブラック", "brand": "NON TOKYO", "size": "", "condition": "", "old_price": 6600.0, "new_price": 5500, "price_down": 1100.0, "url": "https://www.trefac.jp/store/3050003709285460/c3121579", "image_url": "https://www.trefac.jp/image/item/3050003709285460/w144/3050003709285460_01_5820w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "things fabricsシングス ファブリックス）の古着「Terry Cloth Sailor Collar dress / パイル地 セーラーカーラー ドレス / Made in JAPAN」｜ブラック", "brand": "things fabrics", "size": "", "condition": "", "old_price": 5500.0, "new_price": 4400, "price_down": 1100.0, "url": "https://www.trefac.jp/store/3050004013770460/c3750283", "image_url": "https://www.trefac.jp/image/item/3050004013770460/w144/3050004013770460_01_8358w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "YOKO CHANヨーコチャン）の古着「ツイード コクーンワンピース / 日本製 / 17AW」｜ネイビー", "brand": "YOKO CHAN", "size": "", "condition": "", "old_price": 4400.0, "new_price": 3300, "price_down": 1100.0, "url": "https://www.trefac.jp/store/3050004191423460/c3631066", "image_url": "https://www.trefac.jp/image/item/3050004191423460/w144/3050004191423460_01_8909w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "UNITED TOKYOユナイテッドトーキョー）の古着「スローブカットキャミワンピース 143111002」｜ダークカーキ", "brand": "UNITED TOKYO", "size": "", "condition": "", "old_price": 5500.0, "new_price": 4400, "price_down": 1100.0, "url": "https://www.trefac.jp/store/3049005549197518/c4041386", "image_url": "https://www.trefac.jp/image/item/3049005549197518/w144/3049005549197518_01_3500w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "STUDIOUSステュディオス）の古着「Back Tucked Dress / バックタックワンピース / 125311019」｜ブラック", "brand": "STUDIOUS", "size": "", "condition": "", "old_price": 7700.0, "new_price": 6600, "price_down": 1100.0, "url": "https://www.trefac.jp/store/3050004460178460/c4033152", "image_url": "https://www.trefac.jp/image/item/3050004460178460/w144/3050004460178460_01_9946w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "HER LIP TOハーリップトゥ）の古着「Dream Floral Long Dress」｜ホワイト", "brand": "HER LIP TO", "size": "", "condition": "", "old_price": 5500.0, "new_price": 4400, "price_down": 1100.0, "url": "https://www.trefac.jp/store/3050004533780460/c4028992", "image_url": "https://www.trefac.jp/image/item/3050004533780460/w144/3050004533780460_01_8200w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "新着", "title": "45rpm45アールピーエム）の古着「長袖ワンピース」｜カーキ", "brand": "45rpm", "size": "", "condition": "", "old_price": null, "new_price": 20900, "price_down": null, "url": "https://www.trefac.jp/store/1033012428745038/c3991456", "image_url": "https://www.trefac.jp/image/item/1033012428745038/w144/1033012428745038_01_2904w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition", "old_price", "price_down"]}, {"status": "値下げ", "title": "Mame Kurogouchiマメクロゴウチ）の古着「Asymmetric Neck Knitted Dress / アシンメトリーネックニットドレス / MM25SS-KN088」｜ホワイト", "brand": "Mame Kurogouchi", "size": "", "condition": "", "old_price": 15400.0, "new_price": 14300, "price_down": 1100.0, "url": "https://www.trefac.jp/store/3050003983913460/c3408382", "image_url": "https://www.trefac.jp/image/item/3050003983913460/w144/3050003983913460_01_1961w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "Diagramダイアグラム）の古着「Kika Print Tiered Dress / キカプリントティアードワンピース / 0323431042」｜マルチカラー", "brand": "Diagram", "size": "", "condition": "", "old_price": 15400.0, "new_price": 14300, "price_down": 1100.0, "url": "https://www.trefac.jp/store/3050004138756460/c3747238", "image_url": "https://www.trefac.jp/image/item/3050004138756460/w144/3050004138756460_01_6682w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "自由区ジユウク）の古着「ノースリーブワンピース」｜ネイビー", "brand": "自由区", "size": "", "condition": "", "old_price": 3850.0, "new_price": 3300, "price_down": 550.0, "url": "https://www.trefac.jp/store/3107000152948257/c4153661", "image_url": "https://www.trefac.jp/image/item/3107000152948257/w144/3107000152948257_01_3744w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "ALL SAINTSオールセインツ）の古着「ワンピース」｜ブラック", "brand": "ALL SAINTS", "size": "", "condition": "", "old_price": 3850.0, "new_price": 3300, "price_down": 550.0, "url": "https://www.trefac.jp/store/3090058739530257/c3892322", "image_url": "https://www.trefac.jp/image/item/3090058739530257/w144/3090058739530257_01_9471w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "23区×LIBECOニジュウサンク×リベコ）の古着「ストライプリネンシャツワンピース」｜レッド", "brand": "23区×LIBECO", "size": "", "condition": "", "old_price": 4950.0, "new_price": 4400, "price_down": 550.0, "url": "https://www.trefac.jp/store/3090058850402257/c3882998", "image_url": "https://www.trefac.jp/image/item/3090058850402257/w144/3090058850402257_01_1425w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "Pale Juteペールジュート）の古着「polka dot slip one-piece」｜ブラック", "brand": "Pale Jute", "size": "", "condition": "", "old_price": 15400.0, "new_price": 14300, "price_down": 1100.0, "url": "https://www.trefac.jp/store/3090059925864257/c3848213", "image_url": "https://www.trefac.jp/image/item/3090059925864257/w144/3090059925864257_01_8660w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "Pinky & Dianneピンキーアンドダイアン）の古着「ヨットプリントワンピース / 031-4140582」｜アイボリー", "brand": "Pinky & Dianne", "size": "", "condition": "", "old_price": 11000.0, "new_price": 9900, "price_down": 1100.0, "url": "https://www.trefac.jp/store/3050004628400460/c4119529", "image_url": "https://www.trefac.jp/image/item/3050004628400460/w144/3050004628400460_01_9678w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "新着", "title": "INGEBORGインゲボルグ）の古着「チュールレースワンピース」｜ブラウン", "brand": "INGEBORG", "size": "", "condition": "", "old_price": null, "new_price": 6600, "price_down": null, "url": "https://www.trefac.jp/store/3107000297724257/c4094759", "image_url": "https://www.trefac.jp/image/item/3107000297724257/w144/3107000297724257_01_1814w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition", "old_price", "price_down"]}, {"status": "新着", "title": "regleamリグリーム）の古着「バックシャンリネンワンピース」｜ブラック", "brand": "regleam", "size": "", "condition": "", "old_price": null, "new_price": 5500, "price_down": null, "url": "https://www.trefac.jp/store/3107000296727257/c4078370", "image_url": "https://www.trefac.jp/image/item/3107000296727257/w144/3107000296727257_01_5251w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition", "old_price", "price_down"]}, {"status": "値下げ", "title": "Pinky & Dianneピンキーアンドダイアン）の古着「25SS ノーティカルプリントワンピース」｜ブルー", "brand": "Pinky & Dianne", "size": "", "condition": "", "old_price": 12100.0, "new_price": 11000, "price_down": 1100.0, "url": "https://www.trefac.jp/store/3050004589930460/c4068166", "image_url": "https://www.trefac.jp/image/item/3050004589930460/w144/3050004589930460_01_6379w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "ENFOLDエンフォルド）の古着「レイヤードドレープドレスワンピース / 300DS333-2000」｜ブラック", "brand": "ENFOLD", "size": "", "condition": "", "old_price": 11000.0, "new_price": 9900, "price_down": 1100.0, "url": "https://www.trefac.jp/store/3050004056548460/c4033260", "image_url": "https://www.trefac.jp/image/item/3050004056548460/w144/3050004056548460_01_5007w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "M'S GRACYエムズグレイシー）の古着「リボンバラプリントワンピース 半袖ワンピース」｜ピンク", "brand": "M'S GRACY", "size": "", "condition": "", "old_price": 6600.0, "new_price": 5500, "price_down": 1100.0, "url": "https://www.trefac.jp/store/3107000050145257/c3960545", "image_url": "https://www.trefac.jp/image/item/3107000050145257/w144/3107000050145257_01_9267w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "Reneルネ）の古着「Aラインデニムワンピース」｜インディゴ", "brand": "Rene", "size": "", "condition": "", "old_price": 17600.0, "new_price": 15400, "price_down": 2200.0, "url": "https://www.trefac.jp/store/3090057263555044/c3093151", "image_url": "https://www.trefac.jp/image/item/3090057263555044/w144/3090057263555044_01_4397w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "ATONエイトン）の古着「50/2NATURAL DYED ORGANIC VEST DRESS」｜ブラック", "brand": "ATON", "size": "", "condition": "", "old_price": 12100.0, "new_price": 11000, "price_down": 1100.0, "url": "https://www.trefac.jp/store/3090058114436257/c3351247", "image_url": "https://www.trefac.jp/image/item/3090058114436257/w144/3090058114436257_01_3068w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "HER LIP TOハーリップトゥ）の古着「Point Lace Pleated Dress」｜ブラック", "brand": "HER LIP TO", "size": "", "condition": "", "old_price": 14300.0, "new_price": 13200, "price_down": 1100.0, "url": "https://www.trefac.jp/store/3090057229773257/c3339224", "image_url": "https://www.trefac.jp/image/item/3090057229773257/w144/3090057229773257_01_3242w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "Spick and Spanスピック＆スパン）の古着「バックプリーツワンピース　シャツワンピース」｜ブラック", "brand": "Spick and Span", "size": "", "condition": "", "old_price": 4950.0, "new_price": 4400, "price_down": 550.0, "url": "https://www.trefac.jp/store/3090057893936257/c3735308", "image_url": "https://www.trefac.jp/image/item/3090057893936257/w144/3090057893936257_01_4685w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "pinueピヌエ）の古着「コットンスタンドカラーシャツワンピース」｜オリーブ", "brand": "pinue", "size": "", "condition": "", "old_price": 3300.0, "new_price": 2750, "price_down": 550.0, "url": "https://www.trefac.jp/store/3090059858483257/c4134706", "image_url": "https://www.trefac.jp/image/item/3090059858483257/w144/3090059858483257_01_8859w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "LEONARD PARISレオナール パリ）の古着「インポートロゴワンピース / 0480913」｜ブラック×ブラウン", "brand": "LEONARD PARIS", "size": "", "condition": "", "old_price": 70400.0, "new_price": 68200, "price_down": 2200.0, "url": "https://www.trefac.jp/store/3050004462417460/c3920783", "image_url": "https://www.trefac.jp/image/item/3050004462417460/w144/3050004462417460_01_0073w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "TSUHARU by samansa Mos2ツハル バイ サマンサモスモス）の古着「ウールコットンワンピース」｜アイボリー", "brand": "TSUHARU by samansa Mos2", "size": "", "condition": "", "old_price": 3300.0, "new_price": 2200, "price_down": 1100.0, "url": "https://www.trefac.jp/store/3074001629406176/c3832413", "image_url": "https://www.trefac.jp/image/item/3074001629406176/w144/3074001629406176_01_7432w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "新着", "title": "Lily Brown×MARY QUANTリリーブラウン×マリークヮント）の古着「デイジー刺繍ニットワンピース」｜ブラック", "brand": "Lily Brown×MARY QUANT", "size": "", "condition": "", "old_price": null, "new_price": 3850, "price_down": null, "url": "https://www.trefac.jp/store/3107000310942257/c4279180", "image_url": "https://www.trefac.jp/image/item/3107000310942257/w144/3107000310942257_01_2183w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition", "old_price", "price_down"]}, {"status": "値下げ", "title": "ATONエイトン）の古着「48/2ナチュラルダイフレアドレス」｜ホワイト", "brand": "ATON", "size": "", "condition": "", "old_price": 7700.0, "new_price": 6600, "price_down": 1100.0, "url": "https://www.trefac.jp/store/3090062437644257/c3993023", "image_url": "https://www.trefac.jp/image/item/3090062437644257/w144/3090062437644257_01_9424w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "eimy istoireエイミーイストワール）の古着「リップルダブルパフフレアーワンピース」｜グレー", "brand": "eimy istoire", "size": "", "condition": "", "old_price": 4950.0, "new_price": 4400, "price_down": 550.0, "url": "https://www.trefac.jp/store/3107000281075257/c3980079", "image_url": "https://www.trefac.jp/image/item/3107000281075257/w144/3107000281075257_01_7166w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "FRAY IDフレイ アイディー）の古着「プリーツプリントワンピ-ス」｜ホワイト", "brand": "FRAY ID", "size": "", "condition": "", "old_price": 4400.0, "new_price": 3850, "price_down": 550.0, "url": "https://www.trefac.jp/store/3090058746651257/c3976034", "image_url": "https://www.trefac.jp/image/item/3090058746651257/w144/3090058746651257_01_2940w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "Noelaノエラ）の古着「レースシアーロングワンピース」｜ピンク", "brand": "Noela", "size": "", "condition": "", "old_price": 4400.0, "new_price": 3850, "price_down": 550.0, "url": "https://www.trefac.jp/store/3090057983934257/c3974274", "image_url": "https://www.trefac.jp/image/item/3090057983934257/w144/3090057983934257_01_1871w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "UNITED ARROWSユナイテッドアローズ）の古着「ギャザーフレンチスリーブワンピース　ノースリーブワンピース」｜ブラック", "brand": "UNITED ARROWS", "size": "", "condition": "", "old_price": 12100.0, "new_price": 11000, "price_down": 1100.0, "url": "https://www.trefac.jp/store/3090063478875257/c3960571", "image_url": "https://www.trefac.jp/image/item/3090063478875257/w144/3090063478875257_01_4350w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "SLOBE IENAスローブ イエナ）の古着「リネンIラインキャミワンピース」｜グレー", "brand": "SLOBE IENA", "size": "", "condition": "", "old_price": 3850.0, "new_price": 3300, "price_down": 550.0, "url": "https://www.trefac.jp/store/3077001471495256/c3137517", "image_url": "https://www.trefac.jp/image/item/3077001471495256/w144/3077001471495256_01_7775w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "SLOBE IENAスローブ イエナ）の古着「T/C タッサー キャミワンピース」｜ブラック", "brand": "SLOBE IENA", "size": "", "condition": "", "old_price": 4400.0, "new_price": 3300, "price_down": 1100.0, "url": "https://www.trefac.jp/store/3077001471488256/c3137497", "image_url": "https://www.trefac.jp/image/item/3077001471488256/w144/3077001471488256_01_6983w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "LAUREN RALPH LAURENローレン ラルフ ローレン）の古着「ジャージーワンピース」｜ブラック", "brand": "LAUREN RALPH LAUREN", "size": "", "condition": "", "old_price": 4400.0, "new_price": 3300, "price_down": 1100.0, "url": "https://www.trefac.jp/store/3077001540757256/c3209629", "image_url": "https://www.trefac.jp/image/item/3077001540757256/w144/3077001540757256_01_7380w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "mina perhonenミナ ペルホネン）の古着「リネン半袖ワンピース」｜オリーブ", "brand": "mina perhonen", "size": "", "condition": "", "old_price": 22000.0, "new_price": 19800, "price_down": 2200.0, "url": "https://www.trefac.jp/store/3107000084157257/c3848387", "image_url": "https://www.trefac.jp/image/item/3107000084157257/w144/3107000084157257_01_3977w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "NOLLEY'Sノーリーズ）の古着「花柄ラメレースワンピース」｜ブラック", "brand": "NOLLEY'S", "size": "", "condition": "", "old_price": 3850.0, "new_price": 3300, "price_down": 550.0, "url": "https://www.trefac.jp/store/3035004847273234/c2916320", "image_url": "https://www.trefac.jp/image/item/3035004847273234/w144/3035004847273234_01_8408w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "Kate Spadeケイトスペード）の古着「レオパードワンピース/パフスリーブシフトドレス」｜マルチカラー", "brand": "Kate Spade", "size": "", "condition": "", "old_price": 6600.0, "new_price": 5500, "price_down": 1100.0, "url": "https://www.trefac.jp/store/3035005413750234/c4143137", "image_url": "https://www.trefac.jp/image/item/3035005413750234/w144/3035005413750234_01_0649w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}, {"status": "値下げ", "title": "MARIHAマリハ）の古着「夜のドレス/Evening Dress」｜ブルー", "brand": "MARIHA", "size": "", "condition": "", "old_price": 7700.0, "new_price": 6600, "price_down": 1100.0, "url": "https://www.trefac.jp/store/3037002458130352/c3825075", "image_url": "https://www.trefac.jp/image/item/3037002458130352/w144/3037002458130352_01_7734w.jpeg", "shop": "トレファク", "category": "その他", "source_file": "値下げ検知_トレファク_20260826_070009.xlsx", "source_date": "2026-08-26", "missing_fields": ["size", "condition"]}];
+const SOURCES = ["値下げ検知_トレファク_20260826_070009.xlsx"];
+const STORAGE_KEY = 'shop_items_sourcing_decisions_v1';
+const PENDING_STORAGE_KEY = 'shop_items_sourcing_pending_v1';
+const CLOUD_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyzd8AGarZZTyvl8YfSEWdEUyaiUtKn81wNJOCFyREeni94FfTZk3wbJai3TXMqO9kb/exec';
+const DECISION_DEFINITIONS = {
+  positive:{label:'仕入れ対象',symbol:'✓',reasons:[
+    ['P1','回転わるくなさそう＆3,000円くらい利益でそう'],
+    ['P2','めっちゃ利益取れそう（5,000円以上確定）'],
+    ['P3','回転おそそうだけど、待てば3,000円以上利益出そう'],
+    ['P4','あまりこのブランドに詳しくないけど利益出るかも。ためしに買ってみる'],
+    ['P5','未使用タグがついてるから利益取れそう。未使用タグがなかったら買わない']
+  ]},
+  borderline:{label:'迷う・条件次第',symbol:'?',reasons:[
+    ['Y1','季節性がずれすぎてる'],
+    ['Y2','傷や汚れがある。なければ買ってました'],
+    ['Y3','販売価格の相場がピンキリで、今の仕入れ値だと安定して3,000円以上の利益を取れなさそう'],
+    ['Y4','相場は読めるけど、あと1,000円くらい安ければ仕入れ対象だった']
+  ]},
+  negative:{label:'仕入れ対象外',symbol:'×',reasons:[
+    ['R1','ブランドは強いけど、これはあまり利益取れなさそう'],
+    ['R2','このブランドは弱い（そのブランドにしては今の値段が割高、メインラインのブランドではないのに割高）'],
+    ['R3','このブランドについて詳しくない'],
+    ['R4','ブランドは弱くないけど、このアイテムは値段が高くて利益が取れない'],
+    [
+      'R5',
+      '高値の要素がない、シンプルすぎる',
+      '高値の要素がない、シンプルすぎる（高値の要素には大きめのサイズ、そのブランド特有のデザイン、ギャザーやカシュクール・柄物・変形・アシンメトリー・フリンジ・リボン・ボウタイ・フレア・ティアード・フリル・ワイドなどのデザイン性が含まれている、素材がリネン・シルク・カシミヤ・モヘア・アンゴラ・アルパカ・ウールなどがある）'
+    ]
+  ]}
+};
+const el=id=>document.getElementById(id);
+const yen=value=>(value===null||value===''||Number.isNaN(Number(value)))?'':'¥'+Number(value).toLocaleString('ja-JP');
+const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+const NO_IMAGE_DATA_URI='data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"><rect width="600" height="600" fill="#f1f3f5"/><text x="300" y="315" text-anchor="middle" font-family="Arial,sans-serif" font-size="42" font-weight="700" fill="#7b8490">NO IMAGE</text></svg>`);
+window.NO_IMAGE_DATA_URI=NO_IMAGE_DATA_URI;
+function loadJsonObject(storageKey){
+  try{
+    const parsed=JSON.parse(localStorage.getItem(storageKey)||'{}');
+    return parsed&&typeof parsed==='object'&&!Array.isArray(parsed)?parsed:{};
+  }catch(e){
+    console.warn(storageKey+' を読み込めませんでした。',e);
+    return {};
+  }
+}
+function loadDecisionMap(){return loadJsonObject(STORAGE_KEY)}
+function loadPendingMap(){return loadJsonObject(PENDING_STORAGE_KEY)}
+let DECISIONS=loadDecisionMap(),PENDING_DECISIONS=loadPendingMap(),activeItem=null,activeDecision=null,selectedReasonCodes=new Set(),saveTimer=null,toastTimer=null;
+function itemKey(item){return String(item.url||[item.shop,item.brand,item.title,item.new_price].join('|'))}
+const ITEMS_BY_KEY=new Map(ITEMS.map(item=>[itemKey(item),item]));
+function saveDecisionMap(){localStorage.setItem(STORAGE_KEY,JSON.stringify(DECISIONS))}
+function savePendingMap(){localStorage.setItem(PENDING_STORAGE_KEY,JSON.stringify(PENDING_DECISIONS))}
+function showToast(message){const t=el('toast');t.textContent=message;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2200)}
+
+function cloudPayload(record){
+  const item=record.item||{};
+  return {
+    item_key:record.item_key||item.url||'',
+    decision:record.decision||'',
+    decision_label:record.decision_label||'',
+    reason_codes:record.reason_codes||[],
+    reason_texts:record.reason_texts||[],
+    first_decision_at:record.first_decision_at||record.first_judged_at||'',
+    updated_at:record.updated_at||'',
+    status:item.status??'',
+    shop:item.shop??'',
+    category:item.category??'',
+    brand:item.brand??'',
+    title:item.title??'',
+    size:item.size??'',
+    condition:item.condition??'',
+    old_price:item.old_price??null,
+    new_price:item.new_price??null,
+    price_down:item.price_down??null,
+    url:item.url??'',
+    image_url:item.image_url??'',
+    source_file:item.source_file??'',
+    source_date:item.source_date??'',
+    missing_fields:item.missing_fields??[]
+  };
+}
+
+function queueForRetry(record){
+  if(!record?.item_key)return;
+  PENDING_DECISIONS[record.item_key]=record;
+  savePendingMap();
+}
+
+async function sendDecisionToCloud(record,{queueOnFailure=true}={}){
+  if(!record?.item_key)return false;
+
+  if(!navigator.onLine){
+    if(queueOnFailure)queueForRetry(record);
+    return false;
+  }
+
+  try{
+    await fetch(CLOUD_ENDPOINT,{
+      method:'POST',
+      mode:'no-cors',
+      cache:'no-store',
+      redirect:'follow',
+      headers:{'Content-Type':'text/plain;charset=UTF-8'},
+      body:JSON.stringify(cloudPayload(record)),
+      keepalive:true
+    });
+
+    delete PENDING_DECISIONS[record.item_key];
+    savePendingMap();
+    return true;
+  }catch(error){
+    console.warn('クラウド送信に失敗しました。',error);
+    if(queueOnFailure)queueForRetry(record);
+    return false;
+  }
+}
+
+async function retryPendingDecisions(){
+  if(!navigator.onLine)return;
+  const records=Object.values(PENDING_DECISIONS);
+  if(!records.length)return;
+
+  for(const record of records){
+    await sendDecisionToCloud(record,{queueOnFailure:false});
+  }
+  render();
+}
+async function copyTitle(button){const title=button.closest('.card')?.querySelector('.title')?.textContent.trim()||'';if(!title){alert('コピーするタイトルがありません。');return}const label=button.textContent;try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(title)}else{const ta=document.createElement('textarea');ta.value=title;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.left='-9999px';document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();if(!ok)throw new Error('copy failed')}button.textContent='コピー済み';button.disabled=true;setTimeout(()=>{button.textContent=label;button.disabled=false},1200)}catch(e){window.prompt('タイトルをコピーしてください',title)}}
+function openDecisionPanel(key,type){
+  clearTimeout(saveTimer);
+  saveTimer=null;
+
+  const nextItem=ITEMS_BY_KEY.get(key);
+  if(!nextItem||!DECISION_DEFINITIONS[type])return;
+
+  // 別の商品へ移る前に、現在選択中の評価を即時保存する。
+  // クラウド送信はバックグラウンドで続くため、2秒待たず次の商品を評価できる。
+  if(activeItem&&activeDecision&&selectedReasonCodes.size){
+    commitDecision();
+  }else if(activeItem){
+    closeDecisionPanel();
+  }
+
+  el('saveStatus').textContent='';
+  activeItem=nextItem;
+  activeDecision=type;
+
+  const existing=DECISIONS[key];
+  selectedReasonCodes=new Set(
+    existing&&existing.decision===type
+      ? (existing.reason_codes||[])
+      : []
+  );
+
+  const def=DECISION_DEFINITIONS[type];
+  el('panelChip').className='panel-chip '+type;
+  el('panelChip').textContent=def.symbol+' '+def.label;
+  el('panelTitle').textContent=[
+    activeItem.brand,
+    activeItem.title
+  ].filter(Boolean).join(' / ');
+
+  el('reasonList').innerHTML=def.reasons.map(
+    ([code,text])=>
+      `<button class="reason-button ${selectedReasonCodes.has(code)?'selected':''}" `+
+      `type="button" data-code="${esc(code)}">`+
+      `${esc(code.replace(/[A-Z]/g,''))}. ${esc(text)}</button>`
+  ).join('');
+
+  el('decisionPanel').classList.add('open');
+  el('decisionPanel').setAttribute('aria-hidden','false');
+  document.body.classList.add('panel-open');
+}
+function closeDecisionPanel(){clearTimeout(saveTimer);saveTimer=null;el('decisionPanel').classList.remove('open');el('decisionPanel').setAttribute('aria-hidden','true');document.body.classList.remove('panel-open');el('saveStatus').textContent='';activeItem=null;activeDecision=null;selectedReasonCodes=new Set()}
+function saveAndCloseDecisionPanel(){
+  clearTimeout(saveTimer);
+  saveTimer=null;
+  if(activeItem&&activeDecision&&selectedReasonCodes.size){
+    commitDecision();
+    return;
+  }
+  closeDecisionPanel();
+}
+function scheduleDecisionSave(){clearTimeout(saveTimer);if(!selectedReasonCodes.size){el('saveStatus').textContent='理由を1つ以上選んでください';return}el('saveStatus').textContent='最後の操作から2秒後に保存します…';saveTimer=setTimeout(commitDecision,2000)}
+async function commitDecision(){
+  if(!activeItem||!activeDecision||!selectedReasonCodes.size)return;
+
+  const key=itemKey(activeItem);
+  const def=DECISION_DEFINITIONS[activeDecision];
+  const reasonMap=new Map(
+    def.reasons.map(([code,displayText,exportText])=>[
+      code,
+      exportText||displayText
+    ])
+  );
+  const existing=DECISIONS[key];
+  const now=new Date().toISOString();
+  const codes=[...selectedReasonCodes];
+
+  const record={
+    item_key:key,
+    decision:activeDecision,
+    decision_label:def.label,
+    reason_codes:codes,
+    reason_texts:codes.map(code=>reasonMap.get(code)||''),
+    first_decision_at:existing?.first_decision_at||existing?.first_judged_at||now,
+    updated_at:now,
+    item:{
+      status:activeItem.status??'',
+      shop:activeItem.shop??'',
+      category:activeItem.category??'',
+      brand:activeItem.brand??'',
+      title:activeItem.title??'',
+      size:activeItem.size??'',
+      condition:activeItem.condition??'',
+      old_price:activeItem.old_price??null,
+      new_price:activeItem.new_price??null,
+      price_down:activeItem.price_down??null,
+      url:activeItem.url??'',
+      image_url:activeItem.image_url??'',
+      source_file:activeItem.source_file??'',
+      source_date:activeItem.source_date??'',
+      missing_fields:activeItem.missing_fields??[]
+    }
+  };
+
+  DECISIONS[key]=record;
+  saveDecisionMap();
+  closeDecisionPanel();
+  render();
+  showToast('端末に保存・クラウドへ送信中…');
+
+  const sent=await sendDecisionToCloud(record);
+  render();
+  showToast(sent
+    ? 'スプレッドシートへ送信しました'
+    : '通信できないため端末に保存しました。オンライン時に再送します'
+  );
+}
+function render(){const q=el('q').value.trim().toLowerCase(),date=el('date').value,shop=el('shop').value,status=el('status').value,sort=el('sort').value;let rows=ITEMS.filter(i=>(!q||(String(i.brand)+' '+String(i.title)).toLowerCase().includes(q))&&(!date||i.source_date===date)&&(!shop||i.shop===shop)&&(!status||i.status===status));if(sort==='priceAsc')rows.sort((a,b)=>(a.new_price??Infinity)-(b.new_price??Infinity));if(sort==='priceDesc')rows.sort((a,b)=>(b.new_price??-1)-(a.new_price??-1));if(sort==='downDesc')rows.sort((a,b)=>(b.price_down??-1)-(a.price_down??-1));if(sort==='brand')rows.sort((a,b)=>String(a.brand).localeCompare(String(b.brand),'ja'));el('grid').innerHTML=rows.map(i=>{const key=itemKey(i),encoded=encodeURIComponent(key),saved=DECISIONS[key],cardClass=saved?' decision-'+saved.decision:'',image=i.image_url||NO_IMAGE_DATA_URI,price=yen(i.new_price)||'価格不明',meta=[i.category,i.size,i.condition].filter(Boolean).join(' / ')||'詳細情報なし';return `<article class="card${cardClass}"><div class="imgbox"><img src="${esc(image)}" alt="${esc(i.brand||i.title)}" loading="lazy" onerror="this.onerror=null;this.src=NO_IMAGE_DATA_URI"><div class="badges"><span class="badge ${i.status==='新着'?'new':'down'}">${esc(i.status)}</span><span class="badge shop">${esc(i.shop)}</span></div></div><div class="body"><div class="brand">${esc(i.brand||'ブランド不明')}</div><div class="title">${esc(i.title)}</div><button class="copy-title" type="button" onclick="copyTitle(this)">タイトルをコピー</button><div class="meta">${esc(meta)}</div><div class="price-row"><div><div class="old">${yen(i.old_price)}</div><div class="price">${price}</div></div><div class="downamt">${i.price_down?'−'+yen(i.price_down):''}</div></div><div class="signal-row" aria-label="仕入れ判断"><button class="signal-button positive ${saved?.decision==='positive'?'selected':''}" type="button" data-key="${encoded}" data-decision="positive" title="仕入れ対象">✓</button><button class="signal-button borderline ${saved?.decision==='borderline'?'selected':''}" type="button" data-key="${encoded}" data-decision="borderline" title="迷う・条件次第">?</button><button class="signal-button negative ${saved?.decision==='negative'?'selected':''}" type="button" data-key="${encoded}" data-decision="negative" title="仕入れ対象外">×</button></div><a class="open" href="${esc(i.url)}" target="_blank" rel="noopener">商品ページを開く</a></div></article>`}).join('');el('empty').style.display=rows.length?'none':'block';const n=rows.filter(i=>i.status==='新着').length,d=rows.filter(i=>i.status==='値下げ').length,j=Object.keys(DECISIONS).length;el('stats').innerHTML=`<div class="stat">表示 <b>${rows.length}</b>件</div><div class="stat">新着 <b>${n}</b>件</div><div class="stat">値下げ <b>${d}</b>件</div><div class="stat">セカスト <b>${rows.filter(i=>i.shop==='セカスト').length}</b>件</div><div class="stat">トレファク <b>${rows.filter(i=>i.shop==='トレファク').length}</b>件</div><div class="stat">判断保存 <b>${j}</b>件</div><div class="stat">送信待ち <b>${Object.keys(PENDING_DECISIONS).length}</b>件</div>`}
+function flattenDecision(r){const i=r.item||{};return {item_key:r.item_key||'',decision:r.decision||'',decision_label:r.decision_label||'',reason_codes:(r.reason_codes||[]).join('|'),reason_texts:(r.reason_texts||[]).join(' | '),first_decision_at:r.first_decision_at||r.first_judged_at||'',updated_at:r.updated_at||'',status:i.status??'',shop:i.shop??'',category:i.category??'',brand:i.brand??'',title:i.title??'',size:i.size??'',condition:i.condition??'',old_price:i.old_price??'',new_price:i.new_price??'',price_down:i.price_down??'',url:i.url??'',image_url:i.image_url??'',source_file:i.source_file??'',source_date:i.source_date??'',missing_fields:(i.missing_fields||[]).join('|')}}
+function downloadText(name,text,type){const blob=new Blob([text],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url)}
+function timestampForFilename(){const d=new Date(),p=v=>String(v).padStart(2,'0');return [d.getFullYear(),p(d.getMonth()+1),p(d.getDate()),'_',p(d.getHours()),p(d.getMinutes()),p(d.getSeconds())].join('')}
+function exportCsv(){const records=Object.values(DECISIONS).map(flattenDecision);if(!records.length){alert('保存された判断データがありません。');return}const headers=Object.keys(records[0]),quote=v=>'"'+String(v??'').replace(/"/g,'""')+'"',lines=[headers.map(quote).join(','),...records.map(r=>headers.map(h=>quote(r[h])).join(','))];downloadText('仕入れ判断_'+timestampForFilename()+'.csv','\uFEFF'+lines.join('\r\n'),'text/csv;charset=utf-8')}
+function exportJsonl(){const records=Object.values(DECISIONS);if(!records.length){alert('保存された判断データがありません。');return}downloadText('仕入れ判断_'+timestampForFilename()+'.jsonl',records.map(r=>JSON.stringify(r)).join('\n'),'application/x-ndjson;charset=utf-8')}
+function toggleReasonButton(button){
+  if(!button)return;
+  const code=button.dataset.code;
+  if(selectedReasonCodes.has(code)){
+    selectedReasonCodes.delete(code);
+    button.classList.remove('selected');
+  }else{
+    selectedReasonCodes.add(code);
+    button.classList.add('selected');
+  }
+  scheduleDecisionSave();
+}
+
+el('grid').addEventListener('click',e=>{
+  const b=e.target.closest('.signal-button');
+  if(b)openDecisionPanel(decodeURIComponent(b.dataset.key),b.dataset.decision);
+});
+
+el('reasonList').addEventListener('click',e=>{
+  toggleReasonButton(e.target.closest('.reason-button'));
+});
+
+document.addEventListener('keydown',e=>{
+  if(!el('decisionPanel').classList.contains('open'))return;
+  if(e.ctrlKey||e.altKey||e.metaKey)return;
+
+  const number=Number(e.key);
+  if(!Number.isInteger(number)||number<1)return;
+
+  const buttons=[...el('reasonList').querySelectorAll('.reason-button')];
+  const button=buttons[number-1];
+  if(!button)return;
+
+  e.preventDefault();
+  toggleReasonButton(button);
+});
+
+el('panelClose').addEventListener('click',saveAndCloseDecisionPanel);el('exportCsv').addEventListener('click',exportCsv);el('exportJsonl').addEventListener('click',exportJsonl);['q','date','shop','status','sort'].forEach(id=>el(id).addEventListener(id==='q'?'input':'change',render));
+el('sources').textContent=SOURCES.join(' / ');
+const dates=[...new Set(ITEMS.map(i=>i.source_date).filter(Boolean))].sort().reverse();
+el('date').innerHTML='<option value="">全日付</option>'+dates.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('');
+const shops=[...new Set(ITEMS.map(i=>i.shop).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ja'));
+el('shop').innerHTML='<option value="">全サイト</option>'+shops.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
+window.addEventListener('online',retryPendingDecisions);
+render();
+retryPendingDecisions();
+</script>
+</body>
+</html>
